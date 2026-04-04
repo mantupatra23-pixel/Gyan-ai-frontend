@@ -1,333 +1,222 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, Suspense } from 'react';
+import { Canvas, useFrame } from '@react-three/fiber';
+import { Points, PointMaterial, Float, Sphere, MeshDistortMaterial } from '@react-three/drei';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Mic, Image as ImageIcon, Send, Sparkles, BookOpen, 
-  Layout, History, Settings, Zap, Bot, Terminal, PenTool, Award, UserCheck
+  Terminal, History, Settings, Zap, Bot, PenTool, Activity
 } from 'lucide-react';
-import ReactMarkdown from 'react-markdown'; // For formatted explanations
-import remarkMath from 'remark-math'; // For Math equations
-import rehypeKatex from 'rehype-katex'; // For professional Math formatting
-import 'katex/dist/katex.min.css'; // KaTeX CSS for Math formatting
+import ReactMarkdown from 'react-markdown';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
+import 'katex/dist/katex.min.css';
 
-// Interface for Messages
-interface Message {
-  id: number;
-  role: 'ai' | 'user';
-  text: string;
-  type?: 'text' | 'equation' | 'diagram'; // To identify content type for special rendering
-  timestamp: string;
+// --- 1. 3D KNOWLEDGE GALAXY COMPONENT ---
+function KnowledgeGalaxy() {
+  const ref = useRef<any>();
+  const [sphere] = useState(() => {
+    const arr = new Float32Array(500 * 3);
+    for (let i = 0; i < 500; i++) {
+      arr[i * 3] = (Math.random() - 0.5) * 10;
+      arr[i * 3 + 1] = (Math.random() - 0.5) * 10;
+      arr[i * 3 + 2] = (Math.random() - 0.5) * 10;
+    }
+    return arr;
+  });
+
+  useFrame((state, delta) => {
+    ref.current.rotation.x -= delta / 10;
+    ref.current.rotation.y -= delta / 15;
+  });
+
+  return (
+    <group rotation={[0, 0, Math.PI / 4]}>
+      <Points ref={ref} positions={sphere} stride={3} frustumCulled={false}>
+        <PointMaterial transparent color="#6366f1" size={0.05} sizeAttenuation={true} depthWrite={false} />
+      </Points>
+    </group>
+  );
 }
 
-export default function GyanAIFinal() {
+export default function GyanAIV3() {
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
-  const [userKnowledgePoints, setUserKnowledgePoints] = useState(1250); // Student gamification points
-  const [currentTopicMastery, setCurrentTopicMastery] = useState(65); // Percentage for mastery graph
-  
-  const [messages, setMessages] = useState<Message[]>([
-    { 
-      id: 1, 
-      role: 'ai', 
-      text: 'Namaste Mantu! Main GyanAI hoon, aapka personal guru. Aaj hum Relativity ke complex equations solve karenge ya coding seekhenge?',
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    },
-    {
-        id: 2,
-        role: 'user',
-        text: 'Explain Einstein\'s Mass-Energy Equivalence principle',
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    },
-    {
-        id: 3,
-        role: 'ai',
-        text: 'Mass-Energy Equivalence state karta hai ki mass aur energy ek hi cheez ke do different forms hain. Unke beech ka relation is simple equation se define hota hai: $E = mc^2$',
-        type: 'equation',
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    }
+  const [emotion, setEmotion] = useState("Calm"); // Calm, Analytical, Supportive
+  const [messages, setMessages] = useState<any[]>([
+    { id: 1, role: 'ai', text: 'Namaste Mantu! Neural-Sync Active. Aaj hum kaunsa concept "Magic Canvas" par draw karenge?' }
   ]);
   
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll to bottom
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
+    if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, [messages, isTyping]);
 
-  const handleSend = async () => {
+  const handleSend = () => {
     if (!input.trim()) return;
-
-    const userMsg: Message = { 
-      id: Date.now(), 
-      role: 'user', 
-      text: input,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    };
-
-    setMessages(prev => [...prev, userMsg]);
+    setMessages(prev => [...prev, { id: Date.now(), role: 'user', text: input }]);
     setInput("");
     setIsTyping(true);
-
-    // TODO: Connect with FastAPI Backend on AWS GPU
-    // Add logic to increase knowledge points on a successful interaction
     
+    // Emotional Tone Analysis (Simulation)
+    if (input.toLowerCase().includes("hard") || input.toLowerCase().includes("nahi")) {
+      setEmotion("Supportive");
+    } else {
+      setEmotion("Analytical");
+    }
+
     setTimeout(() => {
-        // Sample AI response with formatting
-      const aiMsg: Message = {
-        id: Date.now() + 1,
-        role: 'ai',
-        text: `Maine aapke doubt *${userMsg.text}* ko read kar liya hai. Abhi main iske liye ek professional diagram draw karunga whiteboard par!`,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      };
-      setMessages(prev => [...prev, aiMsg]);
+      setMessages(prev => [...prev, { 
+        id: Date.now() + 1, 
+        role: 'ai', 
+        text: 'Main Newton ke laws draw kar raha hoon. Dekhiye Magic Canvas par... $F = m \cdot a$' 
+      }]);
       setIsTyping(false);
-      // Simulate mastery increase for student mode
-      setCurrentTopicMastery(prev => Math.min(100, prev + 5)); 
-      setUserKnowledgePoints(prev => prev + 50);
-    }, 1500);
+      setEmotion("Calm");
+    }, 2000);
   };
 
   return (
-    <div className="min-h-screen bg-[#020617] text-slate-200 flex flex-col lg:flex-row font-sans selection:bg-indigo-500/30 overflow-hidden">
+    <div className="min-h-screen bg-[#020617] text-slate-200 flex flex-col lg:flex-row overflow-hidden font-sans">
       
-      {/* --- SIDEBAR (Student & Teacher Features) --- */}
-      <nav className="hidden lg:flex w-72 flex-col bg-[#0b0f1a] border-r border-slate-800/40 p-6 z-20">
-        <motion.div 
-          initial={{ x: -20, opacity: 0 }} 
-          animate={{ x: 0, opacity: 1 }}
-          className="flex items-center gap-3 mb-10"
-        >
-          <div className="bg-indigo-600 p-2 rounded-xl shadow-lg shadow-indigo-500/20">
-            <Sparkles className="text-white w-6 h-6" />
+      {/* --- SIDEBAR: 3D KNOWLEDGE GALAXY --- */}
+      <nav className="hidden lg:flex w-80 flex-col bg-[#0b0f1a] border-r border-slate-800/40 p-6 relative">
+        <div className="z-10">
+          <div className="flex items-center gap-3 mb-8">
+            <Sparkles className="text-indigo-500 w-8 h-8" />
+            <h1 className="text-2xl font-black text-white tracking-tighter">GyanAI <span className="text-[10px] bg-indigo-600 px-2 py-0.5 rounded-full">v3.0</span></h1>
           </div>
-          <h1 className="text-2xl font-black tracking-tighter text-white">GyanAI</h1>
-        </motion.div>
-        
-        <div className="space-y-1 flex-1">
-          <SidebarItem icon={<Layout size={18}/>} label="Dashboard" active />
-          <SidebarItem icon={<BookOpen size={18}/>} label="My Courses (Student)" />
-          <SidebarItem icon={<Terminal size={18}/>} label="Code Lab" />
-          <SidebarItem icon={<History size={18}/>} label="Doubt History (Smart Cards)" />
-          <SidebarItem icon={<UserCheck size={18}/>} label="Live Classes (Teacher Mode)" />
-          <SidebarItem icon={<Award size={18}/>} label="Certifications" />
-          <SidebarItem icon={<Settings size={18}/>} label="Settings" />
+          
+          <div className="space-y-1">
+            <SidebarItem icon={<Bot size={18}/>} label="Neural Teacher" active />
+            <SidebarItem icon={<Terminal size={18}/>} label="Code Lab" />
+            <SidebarItem icon={<History size={18}/>} label="Memory Bank" />
+          </div>
         </div>
 
-        {/* --- Student Gamification: Knowledge Mastery Graph --- */}
-        <div className="mt-6 p-4 bg-slate-900/40 rounded-[2rem] border border-slate-800/60 backdrop-blur-md">
-            <div className="flex justify-between items-center mb-3">
-                <p className="text-xs font-black uppercase text-indigo-400 tracking-widest">Mastery Graph</p>
-                <p className="text-[10px] text-slate-500 font-medium">Topic: Relativity</p>
-            </div>
-            <div className="relative h-16 bg-slate-900 rounded-2xl overflow-hidden border border-slate-800">
-                <motion.div 
-                    initial={{ width: 0 }}
-                    animate={{ width: `${currentTopicMastery}%` }}
-                    transition={{ duration: 1 }}
-                    className="absolute inset-y-0 left-0 bg-gradient-to-r from-teal-600 to-indigo-600 rounded-r-xl shadow-[0_0_20px_rgba(79,70,229,0.2)]"
-                ></motion.div>
-                <div className="absolute inset-0 flex items-center justify-center font-bold text-lg text-white">
-                    {currentTopicMastery}%
-                </div>
-            </div>
-        </div>
-
-        {/* --- Student Profile --- */}
-        <div className="mt-4 p-4 bg-slate-900/40 rounded-[2rem] border border-slate-800/60 backdrop-blur-md">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-indigo-500 to-teal-500 flex items-center justify-center font-bold text-white ring-2 ring-indigo-500/20">M</div>
-            <div>
-              <p className="text-sm font-bold text-white">Mantu Patra</p>
-              <p className="text-[10px] text-indigo-400 font-black uppercase tracking-widest">{userKnowledgePoints} KP (Knowledge Points)</p>
-            </div>
-          </div>
+        {/* --- 3. KNOWLEDGE GALAXY (Live 3D) --- */}
+        <div className="absolute inset-0 top-1/2 h-1/2 opacity-40">
+           <Canvas camera={{ position: [0, 0, 5] }}>
+              <KnowledgeGalaxy />
+           </Canvas>
+           <div className="absolute bottom-10 left-6 right-6 text-center">
+              <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Knowledge Galaxy Mastery</p>
+              <div className="mt-2 h-1 bg-slate-800 rounded-full overflow-hidden">
+                 <motion.div animate={{ width: '65%' }} className="h-full bg-indigo-500 shadow-[0_0_10px_#6366f1]"></motion.div>
+              </div>
+           </div>
         </div>
       </nav>
 
       {/* --- MAIN WORKSPACE --- */}
-      <main className="flex-1 flex flex-col p-2 md:p-6 gap-6 relative">
-        
-        <div className="flex flex-col xl:flex-row gap-6 h-full max-h-[92vh]">
+      <main className="flex-1 flex flex-col p-4 gap-6">
+        <div className="flex flex-col xl:flex-row gap-6 h-full max-h-[90vh]">
           
-          {/* LEFT: TEACHER VISUALIZER & BOARD */}
-          <div className="flex-[2.5] flex flex-col gap-6 overflow-hidden">
+          {/* LEFT: NEURAL VISUALIZER & MAGIC CANVAS */}
+          <div className="flex-[2.5] flex flex-col gap-6">
             
-            {/* Advanced Teacher Visualizer: Neural Avatar */}
-            <motion.div 
-              layout
-              className="relative aspect-video lg:h-[380px] bg-[#0b0f1a] rounded-[2.5rem] border border-slate-800 shadow-2xl overflow-hidden group"
-            >
-              {/* Reference image inspired glowing hub effect */}
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-purple-900/30 via-transparent to-transparent opacity-80 blur-xl"></div>
-              
-              <div className="absolute top-6 left-6 flex items-center gap-3 z-10">
-                <div className="bg-red-500/10 px-3 py-1 rounded-full border border-red-500/20 flex items-center gap-2">
-                  <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
-                  <span className="text-[10px] font-black tracking-widest text-red-500 uppercase">Live AI Guru</span>
+            {/* 1. NEURAL-SYNC VOICE VISUALIZER */}
+            <div className="relative aspect-video lg:h-[350px] bg-black rounded-[3rem] border border-slate-800 overflow-hidden shadow-2xl">
+              <Canvas>
+                <ambientLight intensity={0.5} />
+                <Float speed={5} rotationIntensity={2} floatIntensity={2}>
+                  <Sphere args={[1, 64, 64]} scale={1.5}>
+                    <MeshDistortMaterial 
+                      color={emotion === "Supportive" ? "#facc15" : "#6366f1"} 
+                      speed={isTyping ? 10 : 2} 
+                      distort={isTyping ? 0.6 : 0.3} 
+                    />
+                  </Sphere>
+                </Float>
+              </Canvas>
+              <div className="absolute bottom-8 w-full text-center">
+                <div className="flex items-center justify-center gap-2">
+                  <Activity size={14} className="text-indigo-500 animate-pulse" />
+                  <span className="text-[10px] font-bold text-slate-500 tracking-[0.4em] uppercase">Neural-Sync: {emotion}</span>
                 </div>
               </div>
-              
-              {/* Teacher Visualizer: Neural Network Pulse */}
-              <div className="h-full w-full flex flex-col items-center justify-center relative">
-                <motion.div 
-                  animate={{ 
-                    scale: [1, 1.1, 1],
-                    opacity: [0.6, 0.9, 0.6]
-                  }}
-                  transition={{ repeat: Infinity, duration: 4 }}
-                  className="w-56 h-56 bg-gradient-to-tr from-purple-700 to-pink-500 rounded-full blur-[110px] absolute"
-                ></motion.div>
-                {/* AI Humanoid Face placeholder: Represents advanced teacher model */}
-                <Sparkles size={70} className={`text-indigo-200 transition-all duration-500 ${isTyping ? 'scale-110 blur-[1px]' : 'scale-100 opacity-60'}`} />
-                <p className="mt-4 text-slate-300 font-mono text-[10px] tracking-[0.3em] uppercase z-10">
-                  {isTyping ? 'Teacher is Processing...' : 'Ready for Doubt Session'}
-                </p>
-              </div>
-            </motion.div>
+            </div>
 
-            {/* Smart Whiteboard with Stroke Animation */}
-            <motion.div 
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="flex-1 bg-slate-950/50 rounded-[2.5rem] border border-slate-800/40 p-8 relative shadow-inner flex flex-col"
-            >
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Interactive Board</span>
-                <PenTool size={14} className="text-slate-800" />
+            {/* 2. AUTO-DRAWING MAGIC CANVAS */}
+            <div className="flex-1 bg-slate-950/50 rounded-[3rem] border border-slate-800/40 p-8 relative overflow-hidden flex flex-col">
+              <div className="flex justify-between items-center mb-4">
+                <span className="text-[10px] font-black text-indigo-500 uppercase tracking-widest flex items-center gap-2">
+                  <PenTool size={12} /> Magic Teacher Canvas
+                </span>
               </div>
-              {/* Whiteboard content area: Future RAG output for diagrams */}
-              <div className="flex-1 border border-dashed border-slate-800/60 rounded-[1.5rem] flex items-center justify-center bg-slate-900/10 p-6 relative">
-                 <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10"></div>
-                 {/* Placeholder for SVG diagram: inspired by advanced teacher visuals */}
-                 <div className="text-center">
-                    <motion.div
-                        animate={{ strokeDashoffset: [0, 100, 0] }}
-                        transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
-                        className="w-40 h-20 border-l-4 border-b-4 border-pink-500 rounded-bl-3xl opacity-30 shadow-[0_0_15px_rgba(236,72,153,0.3)]"
-                    ></motion.div>
-                    <p className="text-pink-300 italic font-medium text-sm mt-3 opacity-80">AI is generating a diagram of curved space-time...</p>
-                 </div>
+              <div className="flex-1 border border-dashed border-indigo-900/30 rounded-[2rem] flex items-center justify-center relative">
+                 <AnimatePresence>
+                   {isTyping && (
+                     <motion.div 
+                        initial={{ pathLength: 0 }} 
+                        animate={{ pathLength: 1 }} 
+                        className="absolute w-32 h-32 border-4 border-indigo-500/20 rounded-full"
+                     />
+                   )}
+                 </AnimatePresence>
+                 <p className="text-slate-700 italic text-sm">AI is sketching Newton's laws...</p>
               </div>
-            </motion.div>
+            </div>
           </div>
 
-          {/* RIGHT: CHAT INTERFACE WITH MATH/MARKDOWN */}
-          <motion.div 
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="flex-1 min-w-[320px] bg-[#0b0f1a] rounded-[2.5rem] border border-slate-800/50 flex flex-col shadow-2xl overflow-hidden border-t-4 border-t-purple-600/50"
-          >
-            <div className="p-6 border-b border-slate-800/50 flex items-center justify-between bg-slate-900/10">
+          {/* RIGHT: SMART CHAT & EMOTION ANALYZER */}
+          <div className="flex-1 bg-[#0b0f1a] rounded-[3rem] border border-slate-800/50 flex flex-col shadow-2xl overflow-hidden">
+            <div className="p-6 border-b border-slate-800/50 flex items-center justify-between">
                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-purple-600 flex items-center justify-center shadow-lg shadow-purple-600/20">
-                    <Zap size={20} className="text-white" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-white text-sm">GyanAI Guru</h3>
-                    <p className="text-[9px] text-purple-400 font-black uppercase tracking-widest">Physics Expert Mode</p>
-                  </div>
+                  <div className={`w-3 h-3 rounded-full ${emotion === 'Supportive' ? 'bg-yellow-400' : 'bg-green-500'} animate-pulse`}></div>
+                  <h3 className="font-bold text-white tracking-tight">Doubt Solver</h3>
+               </div>
+               {/* 4. EMOTIONAL TONE ANALYSIS DISPLAY */}
+               <div className="px-3 py-1 bg-slate-900 rounded-full border border-slate-800">
+                  <span className="text-[8px] font-black text-indigo-400 uppercase tracking-widest">{emotion} Mode</span>
                </div>
             </div>
 
-            {/* Scrollable Chat Area with professional formatting */}
-            <div 
-              ref={scrollRef}
-              className="flex-1 overflow-y-auto p-6 space-y-6 scroll-smooth scrollbar-thin scrollbar-thumb-slate-800"
-            >
-              <AnimatePresence mode="popLayout">
-                {messages.map((m) => (
-                  <motion.div 
-                    key={m.id}
-                    initial={{ opacity: 0, scale: 0.9, y: 10 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    className={`flex flex-col ${m.role === 'ai' ? 'items-start' : 'items-end'}`}
-                  >
-                    <div className={`max-w-[85%] p-4 rounded-[1.5rem] text-sm leading-relaxed ${
-                      m.role === 'ai' 
-                      ? 'bg-slate-900 text-slate-200 rounded-tl-none border border-slate-800 shadow-xl' 
-                      : 'bg-indigo-600 text-white rounded-tr-none shadow-lg shadow-indigo-600/10 font-medium'
-                    }`}>
-                        {/* Rendering AI response with LaTeX support for Math */}
-                        {m.role === 'ai' && m.type === 'equation' ? (
-                            <ReactMarkdown 
-                                remarkPlugins={[remarkMath]}
-                                rehypePlugins={[rehypeKatex]}
-                                className="markdown-content"
-                            >
-                                {m.text}
-                            </ReactMarkdown>
-                        ) : (
-                            m.text
-                        )}
+            <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-hide">
+              {messages.map((m) => (
+                <div key={m.id} className={`flex ${m.role === 'ai' ? 'justify-start' : 'justify-end'}`}>
+                  <div className={`max-w-[85%] p-4 rounded-[1.8rem] text-sm ${
+                    m.role === 'ai' ? 'bg-slate-900 text-slate-200 rounded-tl-none border border-slate-800' : 'bg-indigo-600 text-white rounded-tr-none shadow-lg shadow-indigo-600/20'
+                  }`}>
+                    <div className="markdown-content prose prose-invert max-w-none text-sm">
+                      <ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]}>
+                        {m.text}
+                      </ReactMarkdown>
                     </div>
-                    <span className="text-[8px] text-slate-600 mt-2 font-bold px-2">{m.timestamp}</span>
-                  </motion.div>
-                ))}
-              </AnimatePresence>
-              
-              {isTyping && (
-                <div className="flex justify-start">
-                  <div className="flex gap-1.5 p-3 bg-slate-900/50 rounded-2xl border border-slate-800">
-                    <div className="w-1.5 h-1.5 bg-purple-500 rounded-full animate-bounce"></div>
-                    <div className="w-1.5 h-1.5 bg-purple-500 rounded-full animate-bounce [animation-delay:0.2s]"></div>
-                    <div className="w-1.5 h-1.5 bg-purple-500 rounded-full animate-bounce [animation-delay:0.4s]"></div>
                   </div>
                 </div>
-              )}
+              ))}
+              {isTyping && <div className="text-[10px] text-indigo-500 font-bold animate-pulse">GyanAI is thinking deeply...</div>}
             </div>
 
-            {/* STUDENT ACTION BAR (Gamified) */}
-            <div className="p-4 md:p-6 bg-[#0b0f1a] border-t border-slate-800/30 relative">
-              
-              {/* Reference image inspired teal glowing accent for Student actions */}
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-teal-600/20 px-4 py-1 rounded-full border border-teal-500/30 text-[9px] font-black uppercase text-teal-400 tracking-widest">Student Mode</div>
-              
-              <div className="relative flex items-center gap-2 bg-slate-900/80 backdrop-blur-xl border border-teal-900/40 p-2 rounded-[2rem] focus-within:ring-2 focus-within:ring-teal-500/20 transition-all">
-                <button className="p-3 text-slate-500 hover:text-teal-400 hover:bg-slate-800 rounded-full transition-all">
-                  <ImageIcon size={18} />
-                </button>
-                <button className="p-3 text-slate-500 hover:text-teal-400 hover:bg-slate-800 rounded-full transition-all">
-                  <Mic size={18} />
-                </button>
+            <div className="p-6">
+              <div className="flex items-center gap-2 bg-slate-900 p-2 rounded-[2rem] border border-slate-800 shadow-inner focus-within:border-indigo-500/50 transition-all">
+                <button className="p-3 text-slate-500 hover:text-indigo-400"><ImageIcon size={20}/></button>
+                <button className="p-3 text-slate-500 hover:text-indigo-400"><Mic size={20}/></button>
                 <input 
-                  value={input}
+                  value={input} 
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                  placeholder="Ask a tough question (like E=mc^2)..." 
-                  className="flex-1 bg-transparent border-none py-3 px-2 text-sm focus:outline-none text-white placeholder:text-slate-600"
+                  placeholder="Explain Relativity..." 
+                  className="flex-1 bg-transparent border-none py-3 px-2 text-sm text-white focus:outline-none" 
                 />
-                <button 
-                  onClick={handleSend}
-                  disabled={!input.trim()}
-                  className="p-3 bg-teal-600 hover:bg-teal-500 disabled:opacity-50 disabled:bg-slate-800 text-white rounded-2xl transition-all shadow-lg shadow-teal-600/20 active:scale-95"
-                >
-                  <Send size={18} />
-                </button>
+                <button onClick={handleSend} className="p-3 bg-indigo-600 text-white rounded-2xl shadow-lg shadow-indigo-500/20"><Send size={18}/></button>
               </div>
             </div>
-          </motion.div>
+          </div>
+
         </div>
       </main>
     </div>
   );
 }
 
-// Sidebar Helper Component
-function SidebarItem({ icon, label, active = false }: { icon: any, label: string, active?: boolean }) {
+function SidebarItem({ icon, label, active = false }: any) {
   return (
-    <motion.div 
-      whileHover={{ x: 5 }}
-      className={`flex items-center gap-4 p-4 rounded-2xl cursor-pointer transition-all ${
-        active 
-        ? 'bg-indigo-600/10 text-indigo-400 border border-indigo-500/10 shadow-[inset_0_0_20px_rgba(79,70,229,0.05)]' 
-        : 'text-slate-500 hover:bg-slate-800/30 hover:text-slate-300'
-      }`}
-    >
-      <div className={`${active ? 'text-indigo-500' : 'text-slate-600'}`}>{icon}</div>
-      <span className="text-sm font-bold tracking-tight">{label}</span>
-    </motion.div>
+    <div className={`flex items-center gap-4 p-4 rounded-2xl cursor-pointer transition-all ${active ? 'bg-indigo-600/10 text-indigo-400 border border-indigo-500/10' : 'text-slate-500 hover:bg-slate-800/50'}`}>
+      {icon} <span className="text-sm font-bold tracking-tight">{label}</span>
+    </div>
   );
 }
