@@ -35,11 +35,11 @@ function KnowledgeStars() {
   );
 }
 
-export default function GyanAIFinalFixed() {
+export default function GyanAILive() {
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [messages, setMessages] = useState<any[]>([
-    { id: 1, role: 'ai', text: 'Neural-Sync v5.0 Finalized. Systems optimal. How can I assist you today?' }
+    { id: 1, role: 'ai', text: 'Neural-Sync v5.0 Active. AWS GPU Core Connected. Main ready hoon, Mantu!' }
   ]);
   
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -48,27 +48,48 @@ export default function GyanAIFinalFixed() {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, [messages, isTyping]);
 
-  const handleSend = () => {
+  // --- 🧠 BACKEND CONNECTION LOGIC ---
+  const handleSend = async () => {
     if (!input.trim()) return;
+
     const userMsg = { id: Date.now(), role: 'user', text: input };
     setMessages(prev => [...prev, userMsg]);
     setInput("");
     setIsTyping(true);
-    
-    setTimeout(() => {
+
+    try {
+      // Connecting to your AWS GPU Backend at Port 8080
+      const response = await fetch('http://3.209.1.117:8080/ask', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: input }),
+      });
+
+      if (!response.ok) throw new Error("Backend Offline");
+
+      const data = await response.json();
+      
       setMessages(prev => [...prev, { 
         id: Date.now() + 1, 
         role: 'ai', 
-        text: 'Processing your request through the Llama-3 Neural Core... Analysis complete.' 
+        text: data.response 
       }]);
+    } catch (error) {
+      console.error("Connection Error:", error);
+      setMessages(prev => [...prev, { 
+        id: Date.now() + 1, 
+        role: 'ai', 
+        text: "Neural Core Connect Error: Check if your AWS Server is running and Port 8080 is open in Security Groups." 
+      }]);
+    } finally {
       setIsTyping(false);
-    }, 2000);
+    }
   };
 
   return (
     <div className="min-h-screen bg-[#020617] text-slate-300 flex flex-col lg:flex-row overflow-hidden font-sans relative">
       
-      {/* --- SIDEBAR: 3D TELEMETRY --- */}
+      {/* --- SIDEBAR --- */}
       <nav className="hidden lg:flex w-80 flex-col bg-slate-950/90 backdrop-blur-2xl border-r border-indigo-500/10 p-6 z-20 relative">
         <div className="z-10 relative">
           <div className="flex items-center gap-3 mb-12">
@@ -84,12 +105,12 @@ export default function GyanAIFinalFixed() {
             <SidebarItem icon={<Terminal size={18}/>} label="Lab" />
           </div>
 
-          <div className="p-4 bg-indigo-950/20 rounded-3xl border border-indigo-500/20 space-y-4">
-             <div className="flex justify-between items-center text-[9px] font-bold text-indigo-400 uppercase tracking-widest">
-                <span>Neural Load</span><span className="text-green-400">24.8%</span>
+          <div className="p-4 bg-indigo-950/20 rounded-3xl border border-indigo-500/20 space-y-4 font-mono text-[10px]">
+             <div className="flex justify-between items-center text-indigo-400">
+                <span>GPU LOAD</span><span className="text-green-400">ACTIVE</span>
              </div>
              <div className="h-1 bg-slate-800 rounded-full overflow-hidden">
-                <motion.div animate={{ width: '24.8%' }} className="h-full bg-indigo-500 shadow-[0_0_10px_#6366f1]"></motion.div>
+                <motion.div animate={{ width: '65%' }} className="h-full bg-indigo-500"></motion.div>
              </div>
           </div>
         </div>
@@ -99,18 +120,18 @@ export default function GyanAIFinalFixed() {
         </div>
       </nav>
 
-      {/* --- MAIN COMMAND CENTER --- */}
+      {/* --- MAIN CORE --- */}
       <main className="flex-1 flex flex-col p-2 md:p-6 gap-6 relative z-10">
         <div className="flex flex-col xl:flex-row gap-6 h-full max-h-[92vh]">
           
-          {/* LEFT: 3D VISUALIZER & CANVAS */}
+          {/* LEFT: 3D VISUALIZER */}
           <div className="flex-[2.8] flex flex-col gap-6 overflow-hidden">
             <div className="relative aspect-video lg:h-[400px] bg-black rounded-[3rem] border border-indigo-500/20 overflow-hidden shadow-2xl">
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_#4338ca22_0%,_transparent_70%)]"></div>
               <div className="absolute top-8 left-8 z-20 flex items-center gap-3">
-                <div className="bg-indigo-600/10 px-4 py-1.5 rounded-full border border-indigo-500/30 flex items-center gap-3 backdrop-blur-md">
+                <div className="bg-indigo-600/10 px-4 py-1.5 rounded-full border border-indigo-500/30 flex items-center gap-3 backdrop-blur-md font-black text-[9px] text-white tracking-widest uppercase">
                   <div className="w-2 h-2 bg-indigo-500 rounded-full animate-ping"></div>
-                  <span className="text-[10px] font-black tracking-widest text-white uppercase italic">Neural Sync Active</span>
+                  AWS Neural Sync Online
                 </div>
               </div>
 
@@ -119,7 +140,7 @@ export default function GyanAIFinalFixed() {
                     <ambientLight intensity={0.5} />
                     <Float speed={4} rotationIntensity={1} floatIntensity={2}>
                        <Sphere args={[1.2, 64, 64]}>
-                          <MeshDistortMaterial color="#6366f1" speed={isTyping ? 8 : 2} distort={isTyping ? 0.6 : 0.3} roughness={0} emissive="#4f46e5" emissiveIntensity={0.5} />
+                          <MeshDistortMaterial color="#6366f1" speed={isTyping ? 10 : 2} distort={isTyping ? 0.6 : 0.3} roughness={0} emissive="#4f46e5" emissiveIntensity={0.5} />
                        </Sphere>
                     </Float>
                  </Canvas>
@@ -129,25 +150,25 @@ export default function GyanAIFinalFixed() {
             <div className="flex-1 bg-slate-950/40 rounded-[3rem] border border-slate-800/60 p-8 relative overflow-hidden flex flex-col">
                 <div className="flex items-center gap-2 mb-4">
                   <PenTool size={14} className="text-indigo-500" />
-                  <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Neural Render Output</span>
+                  <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest italic">Neural Render Canvas</span>
                 </div>
-                <div className="flex-1 border border-indigo-500/10 rounded-[2rem] flex items-center justify-center bg-slate-900/10 relative">
-                    <motion.div animate={{ opacity: [0.2, 0.5, 0.2] }} transition={{ repeat: Infinity, duration: 4 }} className="text-indigo-400 font-mono text-xs italic">
-                       System ready for visual analysis...
+                <div className="flex-1 border border-indigo-500/10 rounded-[2rem] flex items-center justify-center bg-slate-900/10">
+                    <motion.div animate={{ opacity: [0.2, 0.5, 0.2] }} transition={{ repeat: Infinity, duration: 4 }} className="text-indigo-900 font-mono text-[10px]">
+                       {isTyping ? "ANALYZING NEURAL DATA..." : "SYSTEM READY"}
                     </motion.div>
                 </div>
             </div>
           </div>
 
-          {/* RIGHT: COMMAND TERMINAL */}
+          {/* RIGHT: CHAT HUB */}
           <div className="flex-1 min-w-[360px] bg-[#0b0f1a] rounded-[3.5rem] border border-indigo-500/20 flex flex-col shadow-2xl relative overflow-hidden">
             <div className="p-8 border-b border-white/5 bg-slate-900/10 flex items-center gap-4">
-               <div className="w-12 h-12 rounded-2xl bg-indigo-600/10 flex items-center justify-center border border-indigo-500/20 shadow-inner">
+               <div className="w-12 h-12 rounded-2xl bg-indigo-600/10 flex items-center justify-center border border-indigo-500/20">
                   <Zap size={22} className="text-indigo-500" />
                </div>
                <div>
-                  <h3 className="font-bold text-white tracking-tight text-sm">AI Command Center</h3>
-                  <p className="text-[9px] text-slate-500 font-black uppercase tracking-widest italic">Llama-3 Neural Core</p>
+                  <h3 className="font-bold text-white tracking-tight">AI Command Center</h3>
+                  <p className="text-[9px] text-slate-500 font-black uppercase tracking-widest italic tracking-tighter">Llama-3 GPU Cluster</p>
                </div>
             </div>
 
@@ -163,14 +184,20 @@ export default function GyanAIFinalFixed() {
                   </motion.div>
                 ))}
               </AnimatePresence>
-              {isTyping && <div className="ml-4 text-[9px] font-black text-indigo-900 uppercase animate-pulse">Processing...</div>}
+              {isTyping && <div className="ml-4 text-[9px] font-black text-indigo-500 uppercase animate-pulse">Llama-3 is thinking...</div>}
             </div>
 
-            <div className="p-8 bg-slate-950/50">
+            <div className="p-8 bg-slate-950/50 backdrop-blur-3xl">
               <div className="flex items-center gap-3 bg-slate-900/80 border border-indigo-500/10 p-3 rounded-[2.5rem] focus-within:border-indigo-500/40 transition-all shadow-inner">
                 <button className="p-3 text-slate-600 hover:text-indigo-400 transition-colors"><ImageIcon size={20}/></button>
                 <button className="p-3 text-slate-600 hover:text-indigo-400 transition-colors"><Mic size={20}/></button>
-                <input value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSend()} placeholder="Initiate query..." className="flex-1 bg-transparent border-none py-3 px-2 text-sm text-white focus:outline-none placeholder:text-slate-700 font-medium" />
+                <input 
+                   value={input} 
+                   onChange={(e) => setInput(e.target.value)} 
+                   onKeyDown={(e) => e.key === 'Enter' && handleSend()} 
+                   placeholder="Type your doubt..." 
+                   className="flex-1 bg-transparent border-none py-3 px-2 text-sm text-white focus:outline-none placeholder:text-slate-700" 
+                />
                 <button onClick={handleSend} className="p-4 bg-indigo-600 text-white rounded-full shadow-lg hover:bg-indigo-500 active:scale-95 transition-all"><Send size={20}/></button>
               </div>
             </div>
