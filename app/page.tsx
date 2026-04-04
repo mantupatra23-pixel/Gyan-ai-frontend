@@ -15,7 +15,7 @@ import 'katex/dist/katex.min.css';
 
 // --- 1. 3D KNOWLEDGE GALAXY COMPONENT ---
 function KnowledgeGalaxy() {
-  const ref = useRef<any>();
+  const ref = useRef<any>(null);
   const [sphere] = useState(() => {
     const arr = new Float32Array(500 * 3);
     for (let i = 0; i < 500; i++) {
