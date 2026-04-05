@@ -109,7 +109,7 @@ export default function GyanAIV8() {
     setIsTyping(true);
 
     try {
-      const response = await fetch('https://odd-years-see.loca.lt/ask', {
+      const response = await fetch('https://good-items-itch.loca.lt/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Bypass-Tunnel-Reminder': 'true' },
         body: JSON.stringify({ 
