@@ -100,7 +100,7 @@ export default function GyanAIV12() {
     setIsTyping(true);
 
     try {
-      const response = await fetch('https://dressed-wireless-spreading-cdna.trycloudflare.com', {
+      const response = await fetch('https://scott-zoloft-seriously-appear.trycloudflare.com', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Bypass-Tunnel-Reminder': 'true' },
         body: JSON.stringify({ text: currentInput, image: currentImage }),
