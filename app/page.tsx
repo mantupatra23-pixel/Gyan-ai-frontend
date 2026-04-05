@@ -2,72 +2,78 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { Float, Sphere, MeshDistortMaterial, Stars, Grid } from '@react-three/drei';
+import { Float, Sphere, MeshDistortMaterial, Stars, Grid, ContactShadows } from '@react-three/drei';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Mic, Image as ImageIcon, Send, Zap, BrainCircuit, LayoutDashboard, 
-  Globe, Terminal, PenTool, Volume2, Trash2, X, Activity, Beaker, BarChart3
+  Globe, Terminal, Trash2, X, Activity, Beaker, BarChart3, LineChart, Binary
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
+
+// CSS for KaTeX (Ensure this is in your layout or global.css)
 import 'katex/dist/katex.min.css';
 
-// --- 🌌 HOLOGRAPHIC GRID ENGINE ---
-function HolographicScene({ isTyping }: { isTyping: boolean }) {
-  const gridRef = useRef<any>(null);
+// --- 🌌 NEURAL SIMULATION SCENE ---
+function SimulationScene({ active }: { active: boolean }) {
+  const sphereRef = useRef<any>(null);
   useFrame((state) => {
-    if (gridRef.current) {
-      gridRef.current.rotation.z = state.clock.getElapsedTime() * 0.1;
-      if (isTyping) gridRef.current.position.y = Math.sin(state.clock.getElapsedTime() * 5) * 0.1;
+    if (sphereRef.current) {
+      sphereRef.current.rotation.y += 0.01;
+      if (active) {
+        sphereRef.current.scale.setScalar(1 + Math.sin(state.clock.getElapsedTime() * 10) * 0.05);
+      }
     }
   });
 
   return (
     <group>
-      <Stars radius={100} depth={50} count={1000} factor={4} saturation={0} fade speed={1} />
-      <Grid
-        ref={gridRef}
-        infiniteGrid
-        fadeDistance={50}
-        fadeStrength={5}
-        sectionSize={3}
-        sectionColor="#4338ca"
-        cellColor="#1e1b4b"
-      />
-      <Float speed={4} rotationIntensity={2}>
-        <Sphere args={[1.2, 64, 64]}>
+      <Stars radius={100} depth={50} count={1200} factor={4} saturation={0} fade speed={1} />
+      <Grid infiniteGrid fadeDistance={40} fadeStrength={5} sectionSize={2} sectionColor="#4338ca" cellColor="#1e1b4b" />
+      <Float speed={5} rotationIntensity={2} floatIntensity={2}>
+        <mesh ref={sphereRef}>
+          <sphereGeometry args={[1.3, 64, 64]} />
           <MeshDistortMaterial 
-            color={isTyping ? "#ec4899" : "#6366f1"} 
-            speed={isTyping ? 10 : 2} 
-            distort={0.4} 
-            emissive="#312e81"
-            emissiveIntensity={0.5}
+            color={active ? "#ec4899" : "#6366f1"} 
+            speed={active ? 12 : 3} 
+            distort={0.5} 
+            emissive={active ? "#be185d" : "#312e81"}
+            emissiveIntensity={0.6}
+            roughness={0.2}
+            metalness={0.8}
           />
-        </Sphere>
+        </mesh>
       </Float>
+      <ContactShadows position={[0, -2, 0]} opacity={0.4} scale={10} blur={2} far={4.5} />
     </group>
   );
 }
 
-export default function GyanAIV11() {
+export default function GyanAIV12() {
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [messages, setMessages] = useState<any[]>([]);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  
+  const [userLevel, setUserLevel] = useState("Beginner");
+
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    const savedChat = localStorage.getItem('gyanai_v11_mantu');
-    if (savedChat) setMessages(JSON.parse(savedChat));
-    else setMessages([{ id: 1, role: 'ai', text: 'Namaste Mantu! v11.0 Visual Architect active. Aaj hum complex physics ko diagrams ke saath samjhenge.' }]);
+    const savedChat = localStorage.getItem('gyanai_v12_mantu');
+    if (savedChat) {
+      const parsed = JSON.parse(savedChat);
+      setMessages(parsed);
+      if (parsed.length > 10) setUserLevel("Pro Learner");
+    } else {
+      setMessages([{ id: 1, role: 'ai', text: 'Namaste Mantu! v12.0 Simulation Hub active. Aaj hum physics ya math ka kaunsa concept simulate karenge?' }]);
+    }
   }, []);
 
   useEffect(() => {
-    localStorage.setItem('gyanai_v11_mantu', JSON.stringify(messages));
+    localStorage.setItem('gyanai_v12_mantu', JSON.stringify(messages));
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, [messages, isTyping]);
 
@@ -103,96 +109,106 @@ export default function GyanAIV11() {
       setMessages(prev => [...prev, { id: Date.now() + 1, role: 'ai', text: data.response }]);
       speak(data.response);
     } catch (error) {
-      setMessages(prev => [...prev, { id: Date.now() + 1, role: 'ai', text: "Critical Error: Neural Link Broken." }]);
+      setMessages(prev => [...prev, { id: Date.now() + 1, role: 'ai', text: "Link Error: Resetting Neural Bridge..." }]);
     } finally {
       setIsTyping(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#010409] text-slate-300 flex flex-col lg:flex-row overflow-hidden font-sans">
+    <div className="min-h-screen bg-[#02040a] text-slate-300 flex flex-col lg:flex-row overflow-hidden font-sans">
       
-      {/* --- SIDEBAR v11 --- */}
-      <nav className="hidden lg:flex w-72 flex-col bg-black/40 backdrop-blur-3xl border-r border-white/5 p-6 z-20">
+      {/* --- 📟 LAB SIDEBAR --- */}
+      <nav className="hidden lg:flex w-80 flex-col bg-black/60 backdrop-blur-3xl border-r border-white/5 p-8 z-20">
         <div className="flex items-center gap-4 mb-12">
           <div className="relative">
-            <div className="absolute inset-0 bg-indigo-500 blur-lg opacity-40 animate-pulse" />
-            <BrainCircuit className="text-white w-8 h-8 relative z-10" />
+             <div className="absolute inset-0 bg-indigo-600 blur-xl opacity-30 animate-pulse" />
+             <div className="p-3 bg-indigo-600 rounded-2xl relative"><BrainCircuit className="text-white w-6 h-6" /></div>
           </div>
-          <h1 className="text-2xl font-black text-white italic tracking-tighter">GyanAI</h1>
+          <h1 className="text-2xl font-black text-white italic tracking-tighter">GyanAI <span className="text-[10px] text-indigo-400 block not-italic font-mono">v12.0 LAB</span></h1>
         </div>
         
-        <div className="space-y-2 flex-1">
+        <div className="space-y-4 flex-1">
           <SidebarItem icon={<LayoutDashboard size={18}/>} label="Neural Hub" active />
-          <SidebarItem icon={<Beaker size={18}/>} label="Physics Lab" />
-          <SidebarItem icon={<BarChart3 size={18}/>} label="Data Analytics" />
+          <SidebarItem icon={<Beaker size={18}/>} label="Simulation Lab" />
+          <SidebarItem icon={<LineChart size={18}/>} label="Math Plotter" />
           
-          <div className="mt-12 p-5 rounded-[2rem] bg-gradient-to-br from-indigo-900/20 to-transparent border border-indigo-500/10">
-             <p className="text-[10px] font-black text-indigo-400 uppercase mb-2">Visual Sync</p>
-             <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_#22c55e]" />
-                <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Architect Ready</span>
+          <div className="pt-8 border-t border-white/5">
+             <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-4">Student Status</p>
+             <div className="bg-slate-900/50 p-4 rounded-3xl border border-white/5">
+                <div className="flex items-center justify-between mb-2">
+                   <span className="text-[11px] font-bold text-indigo-400">{userLevel}</span>
+                   <Binary size={14} className="text-indigo-400" />
+                </div>
+                <div className="h-1 bg-slate-800 rounded-full overflow-hidden">
+                   <div className="h-full bg-indigo-500 w-2/3 shadow-[0_0_10px_#6366f1]" />
+                </div>
              </div>
           </div>
         </div>
 
-        <button onClick={() => { localStorage.removeItem('gyanai_v11_mantu'); window.location.reload(); }} className="flex items-center gap-4 p-4 text-slate-600 hover:text-red-500 transition-all rounded-2xl">
-          <Trash2 size={16} /> <span className="text-[10px] font-black uppercase tracking-widest">Wipe Core</span>
+        <button onClick={() => { localStorage.removeItem('gyanai_v12_mantu'); window.location.reload(); }} className="flex items-center gap-4 p-4 text-slate-600 hover:text-red-500 transition-all rounded-2xl">
+          <Trash2 size={16} /> <span className="text-[10px] font-black uppercase tracking-widest">Format Hub</span>
         </button>
       </nav>
 
-      {/* --- CORE v11 INTERFACE --- */}
+      {/* --- 🖥️ CORE SIMULATION UI --- */}
       <main className="flex-1 flex flex-col p-4 md:p-6 gap-6 relative">
         <div className="flex flex-col xl:flex-row gap-6 h-full max-h-[92vh]">
           
-          <div className="flex-[2.5] flex flex-col gap-6 overflow-hidden">
-            {/* HOLOGRAPHIC VIEWER */}
-            <div className="relative aspect-video lg:h-[400px] bg-[#000] rounded-[4rem] border border-white/5 overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.5)]">
-              <Canvas camera={{ position: [0, 2, 5] }}>
+          <div className="flex-[2.8] flex flex-col gap-6 overflow-hidden">
+            {/* HOLOGRAPHIC LAB VIEWER */}
+            <div className="relative aspect-video lg:h-[420px] bg-black rounded-[4.5rem] border border-white/5 overflow-hidden shadow-2xl">
+              <Canvas camera={{ position: [0, 2, 6], fov: 45 }}>
                  <ambientLight intensity={0.5} />
-                 <HolographicScene isTyping={isTyping} />
+                 <pointLight position={[10, 10, 10]} intensity={1} />
+                 <SimulationScene active={isTyping || isSpeaking} />
               </Canvas>
-              <div className="absolute top-8 left-8 border-l-2 border-indigo-500 pl-4">
-                 <p className="text-[10px] font-black text-white uppercase tracking-[0.4em]">Visual Architect v11</p>
-                 <p className="text-[8px] text-indigo-500 font-bold uppercase mt-1">Status: Stable Sync</p>
+              <div className="absolute top-10 left-10 border-l-4 border-indigo-500 pl-6">
+                 <p className="text-[12px] font-black text-white uppercase tracking-[0.5em]">Simulation Mode</p>
+                 <p className="text-[10px] text-indigo-500 font-bold uppercase mt-1 animate-pulse italic">Core Synced with Mantu</p>
               </div>
             </div>
 
-            <div className="flex-1 grid grid-cols-2 gap-4">
-               <div className="bg-slate-950/20 rounded-[3rem] border border-white/5 p-6 flex flex-col justify-center items-center text-center group hover:border-indigo-500/20 transition-all">
-                  <Activity className={`mb-2 ${isTyping ? 'text-pink-500' : 'text-slate-800'}`} size={24} />
-                  <p className="text-[9px] font-black text-slate-700 uppercase tracking-widest group-hover:text-slate-500">Neural Response</p>
+            {/* QUICK STATS */}
+            <div className="flex gap-6 flex-1">
+               <div className="flex-1 bg-slate-950/20 rounded-[3.5rem] border border-white/5 p-8 flex flex-col justify-center items-center group hover:bg-indigo-500/5 transition-all">
+                  <BarChart3 className="text-slate-800 mb-3 group-hover:text-indigo-400" size={28} />
+                  <p className="text-[10px] font-black text-slate-700 uppercase tracking-widest group-hover:text-slate-500">Visual Data</p>
                </div>
-               <div className="bg-slate-950/20 rounded-[3rem] border border-white/5 p-6 flex flex-col justify-center items-center text-center group hover:border-teal-500/20 transition-all">
-                  <PenTool className="text-slate-800 mb-2" size={24} />
-                  <p className="text-[9px] font-black text-slate-700 uppercase tracking-widest group-hover:text-slate-500">Architect Mode</p>
+               <div className="flex-1 bg-slate-950/20 rounded-[3.5rem] border border-white/5 p-8 flex flex-col justify-center items-center group hover:bg-pink-500/5 transition-all">
+                  <Activity className={`mb-3 ${isTyping ? 'text-pink-500 animate-bounce' : 'text-slate-800'}`} size={28} />
+                  <p className="text-[10px] font-black text-slate-700 uppercase tracking-widest group-hover:text-slate-500">Neural Load</p>
                </div>
             </div>
           </div>
 
-          {/* CHAT COMMAND CENTER */}
-          <div className="flex-1 min-w-[380px] bg-slate-950/40 rounded-[4.5rem] border border-white/5 flex flex-col shadow-2xl overflow-hidden backdrop-blur-3xl relative">
-            <div className="p-8 border-b border-white/5 flex items-center justify-between bg-white/5">
-               <div className="flex items-center gap-3">
-                  <Zap size={16} className="text-indigo-500" />
-                  <span className="text-[10px] font-black text-white uppercase tracking-[0.3em]">Neural Hub 11</span>
+          {/* CHAT INTERFACE - ULTRA RENDER */}
+          <div className="flex-1 min-w-[400px] bg-slate-950/40 rounded-[5rem] border border-white/5 flex flex-col shadow-2xl overflow-hidden backdrop-blur-3xl relative">
+            <div className="p-10 border-b border-white/5 flex items-center justify-between">
+               <div className="flex items-center gap-4">
+                  <div className="w-2.5 h-2.5 rounded-full bg-teal-500 shadow-[0_0_10px_#14b8a6]" />
+                  <span className="text-[11px] font-black text-white uppercase tracking-[0.4em]">Node: Gyan-12</span>
                </div>
-               <Volume2 size={16} className={isSpeaking ? "text-pink-500 animate-pulse" : "text-slate-800"} />
             </div>
 
-            <div ref={scrollRef} className="flex-1 overflow-y-auto p-8 space-y-10 scrollbar-hide">
+            <div ref={scrollRef} className="flex-1 overflow-y-auto p-10 space-y-12 scrollbar-hide">
               {messages.map((m) => (
-                <motion.div key={m.id} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className={`flex flex-col ${m.role === 'ai' ? 'items-start' : 'items-end'}`}>
-                  {m.image && <img src={m.image} alt="visual" className="max-w-[200px] rounded-[2.5rem] mb-4 border border-indigo-500/20 shadow-2xl" />}
-                  <div className={`max-w-[92%] p-7 rounded-[3rem] text-[13px] leading-relaxed shadow-2xl transition-all ${m.role === 'ai' ? 'bg-slate-900/90 text-indigo-50 border border-white/5 rounded-tl-none' : 'bg-indigo-600 text-white rounded-tr-none'}`}>
+                <motion.div key={m.id} initial={{ opacity: 0, x: m.role === 'ai' ? -20 : 20 }} animate={{ opacity: 1, x: 0 }} className={`flex flex-col ${m.role === 'ai' ? 'items-start' : 'items-end'}`}>
+                  {m.image && <img src={m.image} alt="study" className="max-w-[240px] rounded-[3rem] mb-6 border-4 border-white/5 shadow-2xl" />}
+                  <div className={`max-w-[95%] p-8 rounded-[3.5rem] text-[14px] leading-relaxed shadow-2xl ${m.role === 'ai' ? 'bg-slate-900/90 text-slate-200 border border-white/5 rounded-tl-none font-medium' : 'bg-indigo-600 text-white rounded-tr-none shadow-indigo-600/30'}`}>
                     <ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]}>{m.text}</ReactMarkdown>
                   </div>
                 </motion.div>
               ))}
               {isTyping && (
-                <div className="flex items-center gap-3 ml-6 text-indigo-500">
-                  <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-ping" />
-                  <span className="text-[9px] font-black uppercase tracking-[0.5em]">Architect Thinking...</span>
+                <div className="flex items-center gap-3 ml-8 text-indigo-400">
+                  <div className="flex gap-1.5">
+                    <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-bounce" />
+                    <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-bounce [animation-delay:0.2s]" />
+                    <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-bounce [animation-delay:0.4s]" />
+                  </div>
+                  <span className="text-[10px] font-black uppercase tracking-[0.5em] italic">Solving Problem...</span>
                 </div>
               )}
             </div>
@@ -200,18 +216,18 @@ export default function GyanAIV11() {
             {/* PREVIEW IMAGE */}
             <AnimatePresence>
               {selectedImage && (
-                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }} className="px-8 pb-4">
-                  <div className="relative inline-block">
-                    <img src={selectedImage} className="w-24 h-24 object-cover rounded-[2.2rem] border-2 border-indigo-500 shadow-2xl" />
-                    <button onClick={() => setSelectedImage(null)} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-2 hover:scale-110 transition-all shadow-xl"><X size={12}/></button>
+                <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }} className="px-10 pb-4">
+                  <div className="relative inline-block group">
+                    <img src={selectedImage} className="w-28 h-28 object-cover rounded-[2.5rem] border-2 border-indigo-500 shadow-2xl" />
+                    <button onClick={() => setSelectedImage(null)} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-2.5 shadow-xl hover:scale-110 transition-all"><X size={14}/></button>
                   </div>
                 </motion.div>
               )}
             </AnimatePresence>
 
-            {/* INPUT COMMAND */}
-            <div className="p-8">
-              <div className="flex items-center gap-2 bg-slate-900/80 border border-white/5 p-2 rounded-[3.5rem] shadow-inner focus-within:border-indigo-500/40 transition-all">
+            {/* INPUT HUB */}
+            <div className="p-10">
+              <div className="flex items-center gap-2 bg-slate-900/80 border border-white/5 p-2 rounded-[4rem] shadow-inner focus-within:border-indigo-500/50 transition-all">
                 <input type="file" ref={fileInputRef} onChange={(e) => {
                   const file = e.target.files?.[0];
                   if(file) {
@@ -221,9 +237,9 @@ export default function GyanAIV11() {
                   }
                 }} accept="image/*" className="hidden" />
                 
-                <button onClick={() => fileInputRef.current?.click()} className="p-4 text-slate-600 hover:text-indigo-400"><ImageIcon size={20}/></button>
-                <input value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSend()} placeholder="Issue a visual command..." className="flex-1 bg-transparent border-none py-4 px-2 text-sm text-white focus:outline-none placeholder:text-slate-800" />
-                <button onClick={handleSend} className="p-5 bg-indigo-600 text-white rounded-full shadow-2xl hover:bg-indigo-500 active:scale-95 transition-all"><Send size={20}/></button>
+                <button onClick={() => fileInputRef.current?.click()} className="p-5 text-slate-500 hover:text-indigo-400"><ImageIcon size={22}/></button>
+                <input value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSend()} placeholder="Simulate a concept..." className="flex-1 bg-transparent border-none py-5 px-3 text-base text-white focus:outline-none placeholder:text-slate-800" />
+                <button onClick={handleSend} className="p-6 bg-indigo-600 text-white rounded-full shadow-2xl hover:bg-indigo-500 active:scale-90 transition-all"><Send size={24}/></button>
               </div>
             </div>
           </div>
@@ -235,8 +251,8 @@ export default function GyanAIV11() {
 
 function SidebarItem({ icon, label, active = false }: any) {
   return (
-    <div className={`flex items-center gap-4 p-4 rounded-2xl cursor-pointer transition-all border ${active ? 'bg-indigo-600/10 text-indigo-400 border-indigo-500/20 shadow-inner' : 'text-slate-700 hover:bg-slate-900/50 hover:text-slate-300 border-transparent'}`}>
-      {icon} <span className="text-[10px] font-black uppercase tracking-widest">{label}</span>
+    <div className={`flex items-center gap-4 p-5 rounded-3xl cursor-pointer transition-all border ${active ? 'bg-indigo-600/15 text-indigo-400 border-indigo-500/20 shadow-inner' : 'text-slate-700 hover:bg-slate-900/50 hover:text-slate-300 border-transparent'}`}>
+      {icon} <span className="text-[11px] font-black uppercase tracking-widest">{label}</span>
     </div>
   );
 }
