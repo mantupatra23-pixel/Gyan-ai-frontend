@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Float, Sphere, Stars, Grid, OrbitControls, ContactShadows, Text, MeshDistortMaterial } from '@react-three/drei';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -8,7 +8,7 @@ import * as THREE from 'three';
 import { 
   Send, Zap, X, Activity, Volume2, Eye, ImageIcon, 
   Menu, Home, FlaskConical, Power, RefreshCw, UserPlus, 
-  UserCircle, Bot, GraduationCap, ChevronUp, ChevronDown, Mic, VolumeX, Layers, Presentation, BrainCircuit, LayoutDashboard
+  UserCircle, Bot, GraduationCap, ChevronUp, ChevronDown, Mic, VolumeX, Layers, Presentation, BrainCircuit, LayoutDashboard, Camera, CameraOff, MicOff, Video
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkMath from 'remark-math';
@@ -40,7 +40,7 @@ function LiveWhiteboard({ currentText, accent }: { currentText: string, accent: 
       <mesh><boxGeometry args={[3.2, 2.2, 0.05]} /><meshStandardMaterial color="#020617" transparent opacity={0.8} metalness={0.9} roughness={0.1} /></mesh>
       <mesh position={[0, 0, -0.05]}><boxGeometry args={[3.3, 2.3, 0.05]} /><meshStandardMaterial color={colorMap[accent]} emissive={colorMap[accent]} emissiveIntensity={0.5} /></mesh>
       <Text position={[-1.4, 0.9, 0.06]} color="#ffffff" fontSize={0.12} maxWidth={2.8} lineHeight={1.5} anchorX="left" anchorY="top" font="https://fonts.gstatic.com/s/roboto/v30/KFOmCnqEu92Fr1Me5Q.ttf">
-        {displayText || "Awaiting neural input..."}
+        {displayText || "Waiting for Teacher's input..."}
       </Text>
     </group>
   );
@@ -65,7 +65,7 @@ function MoleculeLab({ accent }: { accent: string }) {
   );
 }
 
-// --- 🧑‍🏫 AVATAR ---
+// --- 🧑‍🏫 DUMMY AVATAR (Pre-Real Video) ---
 function AvatarAlice({ isSpeaking }: { isSpeaking: boolean }) {
   const mouthRef = useRef<any>(null);
   const eyeRef = useRef<any>(null);
@@ -99,7 +99,7 @@ function AvatarAlice({ isSpeaking }: { isSpeaking: boolean }) {
   );
 }
 
-export default function GyanAIV31Ultimate() {
+export default function GyanAIV31TwoWay() {
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -110,7 +110,12 @@ export default function GyanAIV31Ultimate() {
   const [avatarMode, setAvatarMode] = useState("alice"); 
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [liveText, setLiveText] = useState("");
-  const [activePage, setActivePage] = useState("classroom"); // 'dashboard', 'matrix', 'lab', 'classroom'
+  const [activePage, setActivePage] = useState("classroom");
+  
+  // WebRTC Hardware States
+  const [isCamOn, setIsCamOn] = useState(false);
+  const [isMicOn, setIsMicOn] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
   
   const scrollRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -118,13 +123,13 @@ export default function GyanAIV31Ultimate() {
   const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://holders-den-improvements-quantity.trycloudflare.com/ask";
 
   useEffect(() => {
-    const saved = localStorage.getItem('gyanai_v31_ultimate');
+    const saved = localStorage.getItem('gyanai_v31_twoway');
     if (saved) setMessages(JSON.parse(saved));
-    else setMessages([{ id: 1, role: 'ai', text: 'Namaste Mantu! Ultimate AI Engine Online. Ab aap multiple pages switch kar sakte hain.' }]);
+    else setMessages([{ id: 1, role: 'ai', text: 'Namaste Mantu! WebRTC Two-Way Engine Ready. Aap apna Camera aur Mic on kar sakte hain.' }]);
   }, []);
 
   useEffect(() => {
-    localStorage.setItem('gyanai_v31_ultimate', JSON.stringify(messages));
+    localStorage.setItem('gyanai_v31_twoway', JSON.stringify(messages));
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
     const lastMsg = messages[messages.length - 1];
     if (lastMsg && lastMsg.role === 'ai') {
@@ -132,19 +137,60 @@ export default function GyanAIV31Ultimate() {
     }
   }, [messages]);
 
+  // 📸 WEBRTC CAMERA TOGGLE LOGIC
+  const toggleCamera = async () => {
+    if (!isCamOn) {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: isMicOn });
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+        }
+        setIsCamOn(true);
+      } catch (err) {
+        alert("Camera permission denied or device not found.");
+      }
+    } else {
+      const stream = videoRef.current?.srcObject as MediaStream;
+      stream?.getTracks().forEach(track => {
+        if (track.kind === 'video') track.stop();
+      });
+      if (!isMicOn && videoRef.current) videoRef.current.srcObject = null;
+      setIsCamOn(false);
+    }
+  };
+
+  const toggleMic = async () => {
+    if (!isMicOn) {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: isCamOn });
+        if (videoRef.current && !isCamOn) {
+            videoRef.current.srcObject = stream; // Keep stream active for audio even if no video
+        }
+        setIsMicOn(true);
+      } catch (err) {
+        alert("Mic permission denied.");
+      }
+    } else {
+        const stream = videoRef.current?.srcObject as MediaStream;
+        stream?.getTracks().forEach(track => {
+          if (track.kind === 'audio') track.stop();
+        });
+        setIsMicOn(false);
+    }
+  };
+
   const handleSend = async () => {
     if (!input.trim() && !selectedImage) return;
     const start = Date.now();
     const userMsg = { id: Date.now(), role: 'user', text: input, image: selectedImage };
     
-    // Memory Context Build
     const history = messages.slice(-8).map(m => ({
       role: m.role === 'ai' ? 'assistant' : 'user',
       text: m.text
     }));
 
     setMessages(prev => [...prev, userMsg]);
-    setInput(""); setSelectedImage(null); setIsTyping(true); setLiveText("Fetching data from AWS Neural Core...");
+    setInput(""); setSelectedImage(null); setIsTyping(true); setLiveText("Analyzing neural visual/audio data...");
 
     try {
       const response = await fetch(API_URL, {
@@ -154,19 +200,15 @@ export default function GyanAIV31Ultimate() {
           text: userMsg.text, 
           image: userMsg.image,
           teacher_mode: avatarMode,
-          history: history // Sending memory to backend
+          history: history 
         }),
       });
       const data = await response.json();
       setLatency(Date.now() - start);
       setMessages(prev => [...prev, { id: Date.now() + 1, role: 'ai', text: data.response }]);
       
-      // Stop old audio if playing
-      if (audioRef.current) {
-        audioRef.current.pause();
-      }
+      if (audioRef.current) audioRef.current.pause();
 
-      // Play New Edge-TTS Audio
       if (data.audio_base64) {
         const audio = new Audio("data:audio/mp3;base64," + data.audio_base64);
         audioRef.current = audio;
@@ -176,8 +218,8 @@ export default function GyanAIV31Ultimate() {
       }
 
     } catch (e) {
-      setMessages(prev => [...prev, { id: Date.now() + 1, role: 'ai', text: "❌ Connection Error. Backend Unreachable." }]);
-      setLiveText("Error Code 503: Tunnel Broken.");
+      setMessages(prev => [...prev, { id: Date.now() + 1, role: 'ai', text: "❌ Link Error." }]);
+      setLiveText("Error 503: Tunnel Broken.");
     } finally { setIsTyping(false); }
   };
 
@@ -203,28 +245,25 @@ export default function GyanAIV31Ultimate() {
         {isSidebarOpen && (
           <motion.nav initial={{ x: '-100%' }} animate={{ x: 0 }} exit={{ x: '-100%' }} className="fixed top-0 left-0 h-full w-85 bg-slate-950/98 backdrop-blur-4xl z-[140] p-10 pt-36 border-r border-white/5 flex flex-col gap-6 overflow-y-auto scrollbar-hide">
             <div className="flex items-center gap-4 mb-2">
-              <div className={`p-4 rounded-[2.2rem] shadow-2xl ${themeColors[accent].split(' ')[0]}`}><Presentation size={26} className="text-white"/></div>
-              <h1 className="text-2xl font-black italic text-white tracking-tighter uppercase">GyanAI <span className={`text-[9px] block not-italic font-mono ${themeColors[accent].split(' ')[2]}`}>v31.0 PLATFORM</span></h1>
+              <div className={`p-4 rounded-[2.2rem] shadow-2xl ${themeColors[accent].split(' ')[0]}`}><Video size={26} className="text-white"/></div>
+              <h1 className="text-2xl font-black italic text-white tracking-tighter uppercase">GyanAI <span className={`text-[9px] block not-italic font-mono ${themeColors[accent].split(' ')[2]}`}>v31.0 WebRTC</span></h1>
             </div>
             
-            {/* PAGES NAV */}
-            <div className="pt-4 pb-2 px-4 text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] border-t border-white/5">Applications (Pages)</div>
+            <div className="pt-4 pb-2 px-4 text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] border-t border-white/5">Applications</div>
             <SidebarItem icon={<LayoutDashboard size={18}/>} label="Dashboard" active={activePage === 'dashboard'} onClick={() => {setActivePage('dashboard'); setIsSidebarOpen(false);}} accent={accent} />
             <SidebarItem icon={<BrainCircuit size={18}/>} label="Matrix Core" active={activePage === 'matrix'} onClick={() => {setActivePage('matrix'); setIsSidebarOpen(false);}} accent={accent} />
             <SidebarItem icon={<FlaskConical size={18}/>} label="Molecule Lab" active={activePage === 'lab'} onClick={() => {setActivePage('lab'); setIsSidebarOpen(false);}} accent={accent} />
-            <SidebarItem icon={<GraduationCap size={18}/>} label="Live Classroom" active={activePage === 'classroom'} onClick={() => {setActivePage('classroom'); setIsSidebarOpen(false);}} accent={accent} />
+            <SidebarItem icon={<Presentation size={18}/>} label="Live Classroom" active={activePage === 'classroom'} onClick={() => {setActivePage('classroom'); setIsSidebarOpen(false);}} accent={accent} />
 
-            {/* AVATAR SETTINGS */}
             <div className="pt-4 pb-2 px-4 text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] border-t border-white/5">Tutor Settings</div>
             <SidebarItem icon={<UserCircle size={18}/>} label="Tutor Alice" active={avatarMode === 'alice'} onClick={() => setAvatarMode('alice')} accent={accent} />
             <SidebarItem icon={<UserPlus size={18}/>} label="Prof. Einstein" active={avatarMode === 'professor'} onClick={() => setAvatarMode('professor')} accent={accent} />
             <SidebarItem icon={<Bot size={18}/>} label="Cyber Node" active={avatarMode === 'cyber'} onClick={() => setAvatarMode('cyber')} accent={accent} />
             
-            {/* THEME */}
             <div className="pt-4 pb-2 px-4 text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] border-t border-white/5">Environment</div>
             <SidebarItem icon={<Layers size={18}/>} label="Cycle Theme" onClick={() => setAccent(accent === "indigo" ? "rose" : (accent === "rose" ? "teal" : (accent === "teal" ? "amber" : "indigo")))} accent={accent} />
             
-            <button onClick={() => {localStorage.clear(); window.location.reload();}} className="mt-8 p-6 text-red-500 border border-red-500/10 rounded-[3rem] text-[10px] font-black uppercase tracking-[0.3em] flex items-center gap-4 hover:bg-red-500/10 transition-all"><Power size={18}/> Clear Memory</button>
+            <button onClick={() => {localStorage.clear(); window.location.reload();}} className="mt-8 p-6 text-red-500 border border-red-500/10 rounded-[3rem] text-[10px] font-black uppercase tracking-[0.3em] flex items-center gap-4 hover:bg-red-500/10 transition-all"><Power size={18}/> Clear Link</button>
           </motion.nav>
         )}
       </AnimatePresence>
@@ -241,7 +280,6 @@ export default function GyanAIV31Ultimate() {
                  <Grid infiniteGrid sectionSize={3} sectionColor="#1e1b4b" cellColor="#020617" position={[0, -2, 0]} />
                  <OrbitControls enablePan={false} maxPolarAngle={Math.PI / 2 + 0.1} minDistance={4} maxDistance={8} />
                  
-                 {/* PAGE ROUTER LOGIC FOR 3D VIEWER */}
                  {activePage === 'classroom' && (
                     <group>
                       <AvatarAlice isSpeaking={isSpeaking} />
@@ -254,26 +292,45 @@ export default function GyanAIV31Ultimate() {
                       <mesh position={[0,0.5,0]}><sphereGeometry args={[1.5, 64, 64]} /><MeshDistortMaterial color={accent === 'indigo' ? "#6366f1" : (accent === 'rose' ? "#e11d48" : (accent === 'teal' ? "#14b8a6" : "#f59e0b"))} speed={isTyping ? 10 : 2} distort={0.4} metalness={1} roughness={0} /></mesh>
                     </Float>
                  )}
-                 {activePage === 'dashboard' && (
-                    <Text position={[0, 1, 0]} color="#ffffff" fontSize={0.5} anchorX="center" anchorY="middle">Welcome to GyanAI Dashboard</Text>
-                 )}
+                 {activePage === 'dashboard' && <Text position={[0, 1, 0]} color="#ffffff" fontSize={0.5}>GyanAI Dashboard</Text>}
 
                  <ContactShadows position={[0, -2, 0]} opacity={0.5} scale={15} blur={2.5} far={4.5} />
               </Canvas>
+              
               <div className="absolute top-12 left-12 flex items-center gap-4 bg-black/40 backdrop-blur-xl px-6 py-3 rounded-full border border-white/10">
                  <div className={`w-2 h-2 rounded-full animate-pulse ${themeColors[accent].split(' ')[0]}`} />
-                 <p className="text-[10px] font-black text-white uppercase tracking-[0.4em] italic">Active View: {activePage}</p>
+                 <p className="text-[10px] font-black text-white uppercase tracking-[0.4em] italic">Live Teacher View</p>
               </div>
+
+              {/* 📸 STUDENT WEBCAM (PICTURE-IN-PICTURE) */}
+              <div className="absolute bottom-10 right-10 z-[100]">
+                 <div className={`w-36 h-48 md:w-48 md:h-64 bg-slate-900 border-2 rounded-[2rem] overflow-hidden shadow-2xl transition-all ${isCamOn ? themeColors[accent].split(' ')[1] : 'border-white/10'} flex items-center justify-center relative`}>
+                    {isCamOn ? (
+                       <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover transform scale-x-[-1]" />
+                    ) : (
+                       <CameraOff size={32} className="text-slate-600" />
+                    )}
+                    <div className="absolute bottom-3 left-0 w-full flex justify-center gap-2">
+                       <button onClick={toggleMic} className={`p-2 rounded-full backdrop-blur-md ${isMicOn ? 'bg-indigo-500/80 text-white' : 'bg-black/50 text-rose-400'}`}>
+                         {isMicOn ? <Mic size={14}/> : <MicOff size={14}/>}
+                       </button>
+                       <button onClick={toggleCamera} className={`p-2 rounded-full backdrop-blur-md ${isCamOn ? 'bg-indigo-500/80 text-white' : 'bg-black/50 text-rose-400'}`}>
+                         {isCamOn ? <Camera size={14}/> : <CameraOff size={14}/>}
+                       </button>
+                    </div>
+                 </div>
+              </div>
+
             </div>
 
             <div className="grid grid-cols-2 gap-8 flex-1">
                <div className="bg-slate-950/30 rounded-[5rem] border border-white/5 p-8 flex flex-col justify-center items-center">
                   <Activity className={`mb-3 ${isSpeaking ? 'text-rose-500 animate-bounce' : 'text-slate-800'}`} size={38} />
-                  <p className="text-[11px] font-black text-slate-700 uppercase tracking-widest leading-none">Voice & Memory</p>
+                  <p className="text-[11px] font-black text-slate-700 uppercase tracking-widest leading-none">WebRTC Ready</p>
                </div>
                <div className="bg-slate-950/30 rounded-[5rem] border border-white/5 p-8 flex flex-col justify-center items-center">
                   <Zap className={`mb-3 ${isTyping ? 'text-amber-500 animate-pulse' : 'text-slate-800'}`} size={38} />
-                  <p className="text-[11px] font-black text-slate-700 uppercase tracking-widest italic">{latency}ms AWS Engine</p>
+                  <p className="text-[11px] font-black text-slate-700 uppercase tracking-widest italic">{latency}ms AWS Socket</p>
                </div>
             </div>
           </div>
